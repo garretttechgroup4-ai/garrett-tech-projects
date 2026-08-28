@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deal Scout — Real Estate Deal Analyzer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>Deal Scout</h1>
+  <p>Real estate deal analyzer — plug in the numbers, get the verdict.</p>
+  <a class="nav-link" href="compare.html">View Saved Properties →</a>
+</header>
+
+<main>
+  <div class="grid">
+    <section class="card">
+      <h2>Property Details</h2>
+      <form id="dealForm">
+        <div class="field">
+          <label for="address">Property Address</label>
+          <input type="text" id="address" placeholder="123 Main St, Springfield, USA" required>
+        </div>
+
+        <div class="field">
+          <label for="price">Purchase Price</label>
+          <input type="number" id="price" placeholder="300000" min="0" step="1000" required>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="downPct">Down Payment <span class="hint">(%)</span></label>
+            <input type="number" id="downPct" placeholder="20" min="0" max="100" step="0.5" required>
+          </div>
+          <div class="field">
+            <label for="rate">Interest Rate <span class="hint">(% annual)</span></label>
+            <input type="number" id="rate" placeholder="6.5" min="0" step="0.01" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="term">Loan Term <span class="hint">(years)</span></label>
+          <input type="number" id="term" placeholder="30" min="1" step="1" value="30" required>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label for="rent">Monthly Rent</label>
+            <input type="number" id="rent" placeholder="2200" min="0" step="10" required>
+          </div>
+          <div class="field">
+            <label for="expenses">Monthly Expenses <span class="hint">(tax, insurance, upkeep)</span></label>
+            <input type="number" id="expenses" placeholder="450" min="0" step="10" required>
+          </div>
+        </div>
+
+        <button type="submit" class="full-width">Calculate</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Results</h2>
+      <div class="results" id="results">
+        <p class="placeholder">Fill out the form and click Calculate to see how this deal stacks up.</p>
+      </div>
+      <button type="button" class="secondary full-width" id="saveBtn" disabled>Save Analysis</button>
+      <div class="save-status" id="saveStatus"></div>
+    </section>
+  </div>
+
+  <section class="card hidden" id="amortSection">
+    <h2>Amortization Schedule — First 12 Months</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Payment</th>
+            <th>Principal</th>
+            <th>Interest</th>
+            <th>Remaining Balance</th>
+          </tr>
+        </thead>
+        <tbody id="amortBody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer>Deal Scout — for quick estimates only. Always confirm numbers before making an offer.</footer>
+
+<script src="storage.js"></script>
+<script>
+let currentDeal = null;
+
+document.getElementById('dealForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+
+  const address = document.getElementById('address').value.trim() || 'This property';
+  const price = parseFloat(document.getElementById('price').value);
+  const downPct = parseFloat(document.getElementById('downPct').value);
+  const annualRate = parseFloat(document.getElementById('rate').value);
+  const termYears = parseFloat(document.getElementById('term').value);
+  const rent = parseFloat(document.getElementById('rent').value);
+  const expenses = parseFloat(document.getElementById('expenses').value);
+
+  const downPayment = price * (downPct / 100);
+  const loanAmount = price - downPayment;
+  const monthlyRate = (annualRate / 100) / 12;
+  const numPayments = termYears * 12;
+
+  let mortgagePayment;
+  if (monthlyRate === 0) {
+    mortgagePayment = loanAmount / numPayments;
+  } else {
+    mortgagePayment = loanAmount *
+      (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
+      (Math.pow(1 + monthlyRate, numPayments) - 1);
+  }
+
+  const annualRent = rent * 12;
+  const annualExpenses = expenses * 12;
+  const noi = annualRent - annualExpenses;
+  const capRate = (noi / price) * 100;
+
+  const monthlyCashFlow = rent - expenses - mortgagePayment;
+  const annualCashFlow = monthlyCashFlow * 12;
+  const cashOnCash = downPayment > 0 ? (annualCashFlow / downPayment) * 100 : 0;
+
+  const cashFlowClass = monthlyCashFlow >= 0 ? 'positive' : 'negative';
+
+  document.getElementById('results').innerHTML = `
+    <div class="result-address">${escapeHtml(address)}</div>
+
+    <div class="metric">
+      <div class="label">Monthly Mortgage Payment
+        <span class="sub">Principal &amp; interest, ${termYears}-yr loan at ${annualRate}%</span>
+      </div>
+      <div class="value">${fmtMoney(mortgagePayment)}</div>
+    </div>
+
+    <div class="metric">
+      <div class="label">Cap Rate
+        <span class="sub">Net operating income ÷ purchase price</span>
+      </div>
+      <div class="value">${fmtPct(capRate)}</div>
+    </div>
+
+    <div class="metric">
+      <div class="label">Cash-on-Cash Return
+        <span class="sub">Annual cash flow ÷ cash invested (${fmtMoney(downPayment)})</span>
+      </div>
+      <div class="value">${fmtPct(cashOnCash)}</div>
+    </div>
+
+    <div class="metric cashflow">
+      <div class="label">Monthly Cash Flow
+        <span class="sub">Rent − expenses − mortgage payment</span>
+      </div>
+      <div class="value ${cashFlowClass}">${fmtMoney(monthlyCashFlow)}</div>
+    </div>
+  `;
+
+  renderAmortization(loanAmount, monthlyRate, mortgagePayment);
+
+  currentDeal = {
+    address, price, downPct, annualRate, termYears, rent, expenses,
+    downPayment, mortgagePayment, capRate, cashOnCash, monthlyCashFlow
+  };
+
+  document.getElementById('saveBtn').disabled = false;
+  document.getElementById('saveStatus').textContent = '';
+});
+
+function renderAmortization(loanAmount, monthlyRate, mortgagePayment) {
+  let balance = loanAmount;
+  const rows = [];
+
+  for (let month = 1; month <= 12; month++) {
+    const interestPortion = balance * monthlyRate;
+    const principalPortion = mortgagePayment - interestPortion;
+    balance = Math.max(balance - principalPortion, 0);
+
+    rows.push(`
+      <tr>
+        <td>${month}</td>
+        <td>${fmtMoney(mortgagePayment)}</td>
+        <td>${fmtMoney(principalPortion)}</td>
+        <td>${fmtMoney(interestPortion)}</td>
+        <td>${fmtMoney(balance)}</td>
+      </tr>
+    `);
+  }
+
+  document.getElementById('amortBody').innerHTML = rows.join('');
+  document.getElementById('amortSection').classList.remove('hidden');
+}
+
+document.getElementById('saveBtn').addEventListener('click', async function () {
+  if (!currentDeal) return;
+
+  const statusEl = document.getElementById('saveStatus');
+  statusEl.textContent = 'Saving...';
+
+  const savedDeals = loadSavedDeals();
+  savedDeals.push({ ...currentDeal, savedAt: new Date().toISOString() });
+  persistSavedDeals(savedDeals);
+
+  const wrote = await saveDealsToFile(savedDeals);
+  statusEl.textContent = wrote
+    ? 'Saved ✓ — view it on the Saved Properties page.'
+    : 'Saved to this browser, but the file export was skipped.';
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deal Scout — Saved Properties</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>Saved Properties</h1>
+  <p>Compare every analysis you've saved, side by side.</p>
+  <a class="nav-link" href="index.html">← Back to Analyzer</a>
+</header>
+
+<main>
+  <section class="card">
+    <div class="card-head">
+      <h2>Comparison</h2>
+      <span class="note" id="countNote"></span>
+    </div>
+
+    <div class="toolbar">
+      <label class="file-label">
+        Import JSON
+        <input type="file" id="importInput" accept="application/json" class="hidden">
+      </label>
+      <button type="button" class="secondary" id="exportBtn">Export JSON</button>
+      <button type="button" class="danger" id="clearBtn">Clear All</button>
+    </div>
+
+    <p class="empty-state" id="emptyState">No properties saved yet. Go to the Analyzer, calculate a deal, and click "Save Analysis".</p>
+
+    <div class="table-wrap hidden" id="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Address</th>
+            <th>Price</th>
+            <th>Down %</th>
+            <th>Rate</th>
+            <th>Term</th>
+            <th>Rent</th>
+            <th>Expenses</th>
+            <th>Mortgage Pmt</th>
+            <th>Cap Rate</th>
+            <th>CoC Return</th>
+            <th>Monthly CF</th>
+            <th>Saved</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer>Deal Scout — for quick estimates only. Always confirm numbers before making an offer.</footer>
+
+<script src="storage.js"></script>
+<script>
+let deals = loadSavedDeals();
+
+function fmtDate(iso) {
+  try {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch (err) {
+    return '—';
+  }
+}
+
+function render() {
+  const emptyState = document.getElementById('emptyState');
+  const tableWrap = document.getElementById('tableWrap');
+  const countNote = document.getElementById('countNote');
+  const body = document.getElementById('tableBody');
+
+  countNote.textContent = deals.length ? `${deals.length} propert${deals.length === 1 ? 'y' : 'ies'} saved` : '';
+
+  if (deals.length === 0) {
+    emptyState.classList.remove('hidden');
+    tableWrap.classList.add('hidden');
+    return;
+  }
+
+  emptyState.classList.add('hidden');
+  tableWrap.classList.remove('hidden');
+
+  body.innerHTML = deals.map((d, i) => {
+    const cfClass = d.monthlyCashFlow >= 0 ? 'positive' : 'negative';
+    return `
+      <tr>
+        <td>${escapeHtml(d.address || '')}</td>
+        <td>${fmtMoney(d.price || 0)}</td>
+        <td>${(d.downPct ?? 0)}%</td>
+        <td>${(d.annualRate ?? 0)}%</td>
+        <td>${d.termYears ?? '—'} yr</td>
+        <td>${fmtMoney(d.rent || 0)}</td>
+        <td>${fmtMoney(d.expenses || 0)}</td>
+        <td>${fmtMoney(d.mortgagePayment || 0)}</td>
+        <td>${fmtPct(d.capRate || 0)}</td>
+        <td>${fmtPct(d.cashOnCash || 0)}</td>
+        <td class="${cfClass}">${fmtMoney(d.monthlyCashFlow || 0)}</td>
+        <td>${d.savedAt ? fmtDate(d.savedAt) : '—'}</td>
+        <td><button type="button" class="secondary small" data-remove="${i}">Remove</button></td>
+      </tr>
+    `;
+  }).join('');
+
+  body.querySelectorAll('[data-remove]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      deals.splice(parseInt(btn.getAttribute('data-remove'), 10), 1);
+      persistSavedDeals(deals);
+      render();
+    });
+  });
+}
+
+document.getElementById('exportBtn').addEventListener('click', async function () {
+  if (deals.length === 0) return;
+  await saveDealsToFile(deals);
+});
+
+document.getElementById('clearBtn').addEventListener('click', function () {
+  if (deals.length === 0) return;
+  if (!confirm('Remove all saved properties? This cannot be undone.')) return;
+  deals = [];
+  persistSavedDeals(deals);
+  render();
+});
+
+document.getElementById('importInput').addEventListener('change', function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function () {
+    try {
+      const imported = JSON.parse(reader.result);
+      if (!Array.isArray(imported)) throw new Error('not an array');
+      deals = deals.concat(imported);
+      persistSavedDeals(deals);
+      render();
+    } catch (err) {
+      alert('That file doesn\'t look like a valid Deal Scout JSON export.');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+render();
+</script>
+
+</body>
+</html>
