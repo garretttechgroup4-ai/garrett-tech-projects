@@ -1,6 +1,6 @@
-# Off-Market Deal Engine — Prashanth
+# Real View
 
-An owner-first off-market property pipeline. Prashanth supplies PropertyRadar
+An owner-first off-market property pipeline built for Prashanth. He supplies PropertyRadar
 API access and his buy-box criteria; this platform pulls properties by plate
 (Vacant, Absentee Owner, Divorce, etc.), scores every match against his
 criteria, writes a rationale for why it qualifies, and holds everything at a
@@ -26,6 +26,9 @@ archived under `legacy-deal-scout/`.
 - **Cityscape layer** (Phase 5, not yet built) — owner lookup, pending
   permits, development pressure, once `CITYSCAPE_API` is added.
 - **Dashboard** (this Next.js app, deployed to Vercel) — Phase 6.
+
+Real View is its own product, standalone from any other Garrett Technologies
+work — built and branded on its own for Prashanth.
 
 ## Build sequence
 

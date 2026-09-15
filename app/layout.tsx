@@ -3,7 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Off-Market Deal Engine — Prashanth",
+  title: "Real View",
   description: "Owner-first off-market property pipeline built on PropertyRadar data.",
 };
 
@@ -14,8 +14,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="border-b border-border bg-white">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Off-Market Deal Engine</h1>
-              <p className="text-sm text-muted">Owner-first pipeline for Prashanth — PropertyRadar + AI scoring.</p>
+              <h1 className="text-xl font-bold tracking-tight">Real View</h1>
+              <p className="text-sm text-muted">Owner-first off-market pipeline for Prashanth — PropertyRadar + AI scoring.</p>
             </div>
             <nav className="flex gap-5 text-sm font-semibold text-blue">
               <Link href="/">Dashboard</Link>
