@@ -1,5 +1,6 @@
 import { MAX_RESULTS } from "../config";
 import { bbox } from "../geo";
+import { byScore } from "../scoring";
 import type { DataSource, PreviewResult, Property, Ring } from "../types";
 import { demoInArea } from "./demo";
 import { prCount, prFetch } from "./propertyradar";
@@ -31,5 +32,5 @@ export async function previewArea(ring: Ring): Promise<PreviewResult> {
 
 export async function fetchArea(ring: Ring): Promise<Property[]> {
   const props = currentSource() === "demo" ? demoInArea(ring).slice(0, MAX_RESULTS) : await prFetch(ring, MAX_RESULTS);
-  return props.sort((a, b) => b.signals.length - a.signals.length || (b.equityPercent ?? 0) - (a.equityPercent ?? 0));
+  return props.sort(byScore);
 }

@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 import MiniMapLoader from "@/components/MiniMapLoader";
 import PropertyPhoto from "@/components/PropertyPhoto";
 import SignalTag from "@/components/SignalTag";
-import { orderedSignals, pinColor } from "@/lib/config";
+import { orderedSignals } from "@/lib/config";
+import { pinColor, scoreProperty } from "@/lib/scoring";
+import DealNote from "@/components/DealNote";
+import ScoreBadge from "@/components/ScoreBadge";
 import { date, money, moneyFull, number, yearsSince } from "@/lib/format";
 import { getProperty } from "@/lib/store";
 
@@ -14,7 +17,8 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
   const p = await getProperty(decodeURIComponent(id));
   if (!p) notFound();
 
-  const signals = orderedSignals(p.signals);
+  const signals = orderedSignals(p.signals).sort((a, b) => b.weight - a.weight);
+  const score = scoreProperty(p);
   const owned = yearsSince(p.lastSaleDate);
   const facts: [string, string][] = [
     ["Type", p.propertyType],
@@ -41,26 +45,34 @@ export default async function PropertyPage({ params }: { params: Promise<{ id: s
         <div className="aspect-[16/10] w-full">
           <PropertyPhoto id={p.id} address={p.address} enabled={Boolean(process.env.GOOGLE_MAPS_API_KEY)} />
         </div>
-        <div className="p-5">
-          <h1 className="text-2xl font-bold leading-tight">{p.address}</h1>
-          <p className="text-muted">
-            {[p.neighborhood, `${p.city}, ${p.state} ${p.zip}`].filter(Boolean).join(" · ")}
-          </p>
-          <p className="mt-3 text-3xl font-bold">{money(p.estimatedValue)}</p>
-          <p className="text-sm text-muted">estimated value</p>
+        <div className="flex items-start justify-between gap-4 p-5">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold leading-tight">{p.address}</h1>
+            <p className="text-muted">
+              {[p.neighborhood, `${p.city}, ${p.state} ${p.zip}`].filter(Boolean).join(" · ")}
+            </p>
+            <p className="mt-3 text-3xl font-bold">{money(p.estimatedValue)}</p>
+            <p className="text-sm text-muted">estimated value</p>
+          </div>
+          <ScoreBadge signals={p.signals} size="lg" />
         </div>
       </div>
 
       <section className="mt-5 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-border">
         <h2 className="mb-3 text-lg font-bold">Why it could be a deal</h2>
+        <DealNote id={p.id} />
+        <h3 className="mb-3 mt-6 text-sm font-bold uppercase tracking-wide text-muted">
+          What&apos;s driving the score · {score.score}/100
+        </h3>
         {signals.length === 0 ? (
           <p className="text-muted">No motivated-seller signals on record for this property.</p>
         ) : (
           <ul className="space-y-3">
             {signals.map((s) => (
               <li key={s.id} className="flex flex-col gap-1">
-                <div>
+                <div className="flex items-center justify-between gap-3">
                   <SignalTag signal={s} size="md" />
+                  <span className="shrink-0 text-sm font-bold text-ink">+{s.weight}</span>
                 </div>
                 <p className="text-sm text-muted">{s.description}</p>
               </li>

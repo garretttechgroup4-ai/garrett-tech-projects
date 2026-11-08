@@ -27,10 +27,3 @@ export function orderedSignals(ids: string[]): SignalDef[] {
     .sort((a, b) => TONE_ORDER[a.tone] - TONE_ORDER[b.tone] || b.weight - a.weight);
 }
 
-/** Pin color by the most serious signal: red urgent, amber warning, blue other, grey none. */
-export function pinColor(signalIds: string[]): string {
-  const tones = signalIds.map((s) => SIGNAL_BY_ID[s]?.tone);
-  if (tones.includes("urgent")) return "#dc2626";
-  if (tones.includes("warning")) return "#d97706";
-  return signalIds.length ? "#2563eb" : "#94a3b8";
-}

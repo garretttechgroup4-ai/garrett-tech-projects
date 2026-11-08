@@ -8,11 +8,14 @@ import { promises as fs } from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import { demoById } from "./sources/demo";
+import type { Rationale } from "./rationale";
 import type { DataSource, Property, Ring, SearchRecord } from "./types";
 
 interface StoreShape {
   searches: SearchRecord[];
   properties: Record<string, Property>;
+  /** AI write-ups, keyed by property + signals + config version. */
+  rationales?: Record<string, Rationale>;
 }
 
 const FILE = path.join(process.cwd(), "data", "local", "store.json");
@@ -70,4 +73,15 @@ export async function latestSearch(source: DataSource): Promise<{ search: Search
 export async function getProperty(id: string): Promise<Property | null> {
   const data = await load();
   return data.properties[id] ?? demoById(id) ?? null;
+}
+
+export async function getRationale(key: string): Promise<Rationale | null> {
+  const data = await load();
+  return data.rationales?.[key] ?? null;
+}
+
+export async function saveRationale(key: string, r: Rationale): Promise<void> {
+  const data = await load();
+  data.rationales = { ...(data.rationales ?? {}), [key]: r };
+  await persist(data);
 }

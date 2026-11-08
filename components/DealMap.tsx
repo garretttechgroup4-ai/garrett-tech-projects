@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { pinColor } from "@/lib/config";
+import { pinColor } from "@/lib/scoring";
 import type { Property, Ring } from "@/lib/types";
 
 const CENTER: L.LatLngExpression = [41.914, -87.6775]; // Bucktown / Wicker Park

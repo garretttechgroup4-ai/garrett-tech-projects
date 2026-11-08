@@ -2,11 +2,13 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { orderedSignals } from "@/lib/config";
 import { bedsBaths, money } from "@/lib/format";
 import { PRESET_AREAS } from "@/lib/geo";
 import type { DataSource, PreviewResult, Property, Ring } from "@/lib/types";
+import { byScore } from "@/lib/scoring";
+import ScoreBadge from "./ScoreBadge";
 import SignalTag from "./SignalTag";
 
 const DealMap = dynamic(() => import("./DealMap"), {
@@ -31,6 +33,8 @@ export default function DealFinder({ source }: { source: DataSource }) {
   const [busy, setBusy] = useState<null | "preview" | "run">(null);
   const [error, setError] = useState<string | null>(null);
   const rowRefs = useRef<Record<string, HTMLLIElement | null>>({});
+  // Always rank by the current scoring config, even for restored searches.
+  const sorted = useMemo(() => [...properties].sort(byScore), [properties]);
 
   // Reopen where you left off: the last search comes back automatically.
   useEffect(() => {
@@ -231,7 +235,7 @@ export default function DealFinder({ source }: { source: DataSource }) {
                 <h2 className="text-lg font-bold">
                   {properties.length} {properties.length === 1 ? "property" : "properties"}
                 </h2>
-                <p className="text-sm text-muted">Most signals first · tap one for details</p>
+                <p className="text-sm text-muted">Best deals first · tap one for details</p>
               </div>
               <button className={`${btnSecondary} min-h-[44px] shrink-0 whitespace-nowrap px-4 text-sm`} onClick={newSearch}>
                 New search
@@ -241,7 +245,7 @@ export default function DealFinder({ source }: { source: DataSource }) {
               <p className="p-5 text-muted">No properties in this area. Try drawing a bigger one.</p>
             ) : (
               <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
-                {properties.map((p) => (
+                {sorted.map((p) => (
                   <PropertyRow
                     key={p.id}
                     p={p}
@@ -293,29 +297,32 @@ function PropertyRow({
   const signals = orderedSignals(p.signals);
   return (
     <li ref={refCb} onMouseEnter={onHover} className={selected ? "bg-blue-light" : ""}>
-      <Link href={`/property/${p.id}`} className="block px-4 py-4 hover:bg-slate-50 active:bg-slate-100">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="truncate font-semibold">{p.address}</div>
-            <div className="text-sm text-muted">
-              {[p.neighborhood, p.propertyType, bedsBaths(p.beds, p.baths)].filter(Boolean).join(" · ")}
+      <Link href={`/property/${p.id}`} className="flex gap-3 px-4 py-4 hover:bg-slate-50 active:bg-slate-100">
+        <ScoreBadge signals={p.signals} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="truncate font-semibold">{p.address}</div>
+              <div className="text-sm text-muted">
+                {[p.neighborhood, p.propertyType, bedsBaths(p.beds, p.baths)].filter(Boolean).join(" · ")}
+              </div>
+            </div>
+            <div className="shrink-0 text-right">
+              <div className="font-semibold">{money(p.estimatedValue)}</div>
+              <div className="text-xs text-muted">est. value</div>
             </div>
           </div>
-          <div className="shrink-0 text-right">
-            <div className="font-semibold">{money(p.estimatedValue)}</div>
-            <div className="text-xs text-muted">est. value</div>
-          </div>
+          {signals.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {signals.slice(0, 2).map((s) => (
+                <SignalTag key={s.id} signal={s} />
+              ))}
+              {signals.length > 2 && <span className="self-center text-xs font-semibold text-muted">+{signals.length - 2} more</span>}
+            </div>
+          ) : (
+            <div className="mt-2 text-xs text-muted">No seller signals</div>
+          )}
         </div>
-        {signals.length > 0 ? (
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {signals.slice(0, 3).map((s) => (
-              <SignalTag key={s.id} signal={s} />
-            ))}
-            {signals.length > 3 && <span className="self-center text-xs font-semibold text-muted">+{signals.length - 3} more</span>}
-          </div>
-        ) : (
-          <div className="mt-2 text-xs text-muted">No seller signals</div>
-        )}
       </Link>
     </li>
   );

@@ -31,6 +31,8 @@ live data automatically.
 | `data/demo-properties.json` | Demo data |
 | `lib/sources/` | Demo + PropertyRadar data sources, auto-selected |
 | `lib/store.ts` | Storage (local file today, Supabase later) |
+| `lib/scoring.ts` | Deal score from `config/scoring.json` |
+| `lib/rationale.ts` | AI write-up (Claude), cached; plain summary without a key |
 | `app/page.tsx` | Map, drawing, search, list |
 | `app/property/[id]` | Property page |
 | `app/criteria` | Buy box (criteria profile) |
@@ -41,7 +43,7 @@ live data automatically.
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Data: map, area search with preview + confirm, list, property page, demo mode | Done (demo verified; live needs key) |
-| 2 | Scoring + AI rationale, Supabase | Not started |
+| 2 | 0–100 deal score, Hot/Warm/Cold, AI write-up per property | Done (AI needs `ANTHROPIC_API_KEY`; Supabase waits on keys) |
 | 3 | Review gate + outreach drafts | Not started |
 | Later | Chicago Cityscape layer | Not started |
 
