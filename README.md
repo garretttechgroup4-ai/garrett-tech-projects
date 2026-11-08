@@ -1,65 +1,48 @@
-# Real View
+# Super Agent Deal Finder
 
-An owner-first off-market property pipeline built for Prashanth. He supplies PropertyRadar
-API access and his buy-box criteria; this platform pulls properties by plate
-(Vacant, Absentee Owner, Divorce, etc.), scores every match against his
-criteria, writes a rationale for why it qualifies, and holds everything at a
-human review gate before any outreach goes out. Chicago Cityscape bolts on
-later as an intelligence layer (owner lookup, permits, development pressure).
+Owner-first off-market property finder for Prashanth (formerly "Real View").
+Draw an area on the map → see how many properties are inside → confirm →
+browse every property with plain-English motivated-seller signals.
 
-This replaces the previous Deal Scout project in this repo — unrelated, and
-archived under `legacy-deal-scout/`.
+Rules for building on this live in [`CLAUDE.md`](CLAUDE.md).
 
-## Architecture
-
-- **Criteria Profile** (`data/criteria-profile.json`, edited at `/criteria`) —
-  Prashanth's rules: zones, property types, price range, minimum equity, and
-  which PropertyRadar plates to pull from.
-- **PropertyRadar engine** (`lib/propertyradar.ts`) — server-side API client.
-  The key (`PROPERTYRADAR_API`) lives only in the environment, never in code
-  or chat.
-- **Filter / scoring engine** (Phase 2-3, not yet built) — filters
-  PropertyRadar results through the Criteria Profile, scores each property
-  0-100, and writes a rationale for the match.
-- **Review gate** (Phase 4, not yet built) — nothing drafts or sends to an
-  owner without a human approving it first.
-- **Cityscape layer** (Phase 5, not yet built) — owner lookup, pending
-  permits, development pressure, once `CITYSCAPE_API` is added.
-- **Dashboard** (this Next.js app, deployed to Vercel) — Phase 6.
-
-Real View is its own product, standalone from any other Garrett Technologies
-work — built and branded on its own for Prashanth.
-
-## Build sequence
-
-| Phase | Scope | Status |
-|---|---|---|
-| 0 | Foundation — project scaffold, Criteria Profile model, API client | Done |
-| 1 | API exploration — learn every field PropertyRadar returns before building on it | Scaffolded, needs `PROPERTYRADAR_API` |
-| 2 | Filter engine | Not started |
-| 3 | Scoring + rationale | Not started |
-| 4 | Review gate + outreach drafts | Not started |
-| 5 | Cityscape integration | Not started |
-| 6 | Dashboard on Vercel | In progress (this app) |
-
-## Setup
+## Run it
 
 ```bash
 npm install
-cp .env.example .env.local   # then fill in PROPERTYRADAR_API
-npm run dev
+cp .env.example .env.local   # optional — leave empty for demo mode
+npm run dev                  # open http://localhost:3000
 ```
 
-Open `/` for the build status dashboard and Phase 1 API exploration runner,
-or `/criteria` to edit Prashanth's Criteria Profile.
+With no keys the app runs in **demo mode**: 25 sample properties in Bucktown
+and Wicker Park covering every signal in `config/scoring.json`. Add
+`PROPERTYRADAR_API` to `.env.local` (or Vercel) and restart — it switches to
+live data automatically.
 
-## What's still needed to move past Phase 1
+## Where things live
 
-1. **PropertyRadar API key** — set as `PROPERTYRADAR_API` in Vercel project
-   settings (or `.env.local` for dev). Never paste it into chat or commit it.
-2. **Prashanth's real criteria** — zones, property types, price range, equity
-   requirements — to replace the placeholder values in `data/criteria-profile.json`.
-3. **Confirm PropertyRadar's actual endpoint paths and field names** against
-   their official API docs — `lib/propertyradar.ts` is written generically on
-   purpose so Phase 1's exploration run (not assumption) defines the real
-   data dictionary before the filter/scoring engine gets built on it.
+| Path | What |
+|---|---|
+| `CLAUDE.md` | Rulebook |
+| `config/scoring.json` | Signals, plain-English labels, weights, search cap |
+| `docs/field-map.md` | PropertyRadar → app field mapping (items marked **confirm**) |
+| `supabase/schema.sql` | Database migration (run once Supabase is set up) |
+| `prompts/phase-*.md` | Phase specs |
+| `data/demo-properties.json` | Demo data |
+| `lib/sources/` | Demo + PropertyRadar data sources, auto-selected |
+| `lib/store.ts` | Storage (local file today, Supabase later) |
+| `app/page.tsx` | Map, drawing, search, list |
+| `app/property/[id]` | Property page |
+| `app/criteria` | Buy box (criteria profile) |
+| `/api/propertyradar/explore` | Live API check for confirming the field map |
+
+## Phases
+
+| Phase | Scope | Status |
+|---|---|---|
+| 1 | Data: map, area search with preview + confirm, list, property page, demo mode | Done (demo verified; live needs key) |
+| 2 | Scoring + AI rationale, Supabase | Not started |
+| 3 | Review gate + outreach drafts | Not started |
+| Later | Chicago Cityscape layer | Not started |
+
+`legacy-deal-scout/` is an unrelated earlier project kept for reference.
