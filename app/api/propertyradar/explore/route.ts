@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
-import { currentSource } from "@/lib/sources";
-import { exploreSample, listLists } from "@/lib/sources/propertyradar";
+import { CONFIG } from "@/lib/scoring";
+import { apiKey, FIELD_NAMES } from "@/lib/propertyradar";
 
 /**
- * Phase 1 API check: shows PropertyRadar's raw responses so docs/field-map.md
- * can be confirmed. Uses Purchase=0 (no records bought — confirm).
+ * Phase 1 API check: one free (Purchase=0) request for Chicago + Joe's prefilter,
+ * returning PropertyRadar's raw response so docs/field-map.md "confirm" items can be resolved.
  */
-export async function GET(request: Request) {
-  if (currentSource() === "demo") {
-    return NextResponse.json({ mode: "demo", message: "Add PROPERTYRADAR_API to .env.local to run the live API check." });
-  }
-  const limit = Math.min(Number(new URL(request.url).searchParams.get("limit") ?? 5) || 5, 10);
-  const [lists, sample] = await Promise.allSettled([listLists(), exploreSample(limit)]);
-  return NextResponse.json({
-    mode: "live",
-    lists: lists.status === "fulfilled" ? lists.value : { error: String(lists.reason?.message ?? lists.reason) },
-    sample: sample.status === "fulfilled" ? sample.value : { error: String(sample.reason?.message ?? sample.reason) },
+export async function GET() {
+  const key = apiKey();
+  if (!key) return NextResponse.json({ mode: "demo", message: "Add PROPERTY_RADAR_API_KEY to .env.local to run the live API check." });
+  const q = new URLSearchParams({ Purchase: "0", Limit: "3", Fields: FIELD_NAMES.join(",") });
+  const res = await fetch(`https://api.propertyradar.com/v1/properties?${q}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ Criteria: [{ name: "State", value: ["IL"] }, { name: "City", value: ["Chicago"] }, ...CONFIG.prefilter.pr_criteria] }),
+    cache: "no-store",
   });
+  return NextResponse.json({ mode: "live", status: res.status, fieldsRequested: FIELD_NAMES, response: await res.json().catch(() => null) });
 }

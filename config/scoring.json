@@ -26,6 +26,12 @@
     "note": "Land plus construction must reach $1M+. Shown as a pass/fail tag, not a score."
   },
 
+  "credits": {
+    "repurchase_after_days": 30,
+    "max_records_per_pull": 250,
+    "note": "Safety cap per pull; the confirm screen shows the cost before anything is bought."
+  },
+
   "points": { "top": 3, "high": 2, "medium": 1 },
 
   "signals": [
@@ -68,7 +74,8 @@
       "id": "long_ownership",
       "label": "Owned 15+ years (last recorded sale 15+ years ago)",
       "tier": "high",
-      "computed": "From the last transfer/sale date field. Confirm exact field name in the Criteria Reference."
+      "computed": "From the last transfer/sale date field. Confirm exact field name in the Criteria Reference.",
+      "params": { "years_min": 15 }
     },
     {
       "id": "old_building",
@@ -92,7 +99,8 @@
       "id": "nearby_high_sale",
       "label": "Nearby high sale",
       "tier": "high",
-      "computed": "Phase 2: comparable sold within 0.25 mi in last 24 months above $1.5M (tunable)."
+      "computed": "Phase 2: comparable sold within 0.25 mi in last 24 months above $1.5M (tunable).",
+      "params": { "radius_mi": 0.25, "months": 24, "min_price_usd": 1500000 }
     },
     {
       "id": "open_mortgage",

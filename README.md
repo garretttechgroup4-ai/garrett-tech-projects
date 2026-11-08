@@ -40,3 +40,12 @@ Joe's prospecting criteria, turned into instructions Claude Code can build from.
 - Owner age signal (off by default).
 - Text-message follow-ups and calling scripts (TCPA / DNC).
 - PropertyRadar's API is for end users. Fine for this internal tool; showing their data to investors or selling access later needs their partner program.
+
+## Running the app
+```bash
+npm install
+npm run dev        # http://localhost:3000 — demo mode until keys are added
+npm test           # scoring unit tests
+npm run check:secrets   # build check: no secrets in browser code
+```
+Copy `.env.example` to `.env.local` for keys. What's built, what's assumed, and open decisions: `docs/build-notes.md`.

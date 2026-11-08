@@ -26,3 +26,12 @@ export function bedsBaths(beds: number | null, baths: number | null) {
   if (baths != null) parts.push(`${baths} ba`);
   return parts.join(" · ");
 }
+
+/** "Not found" for anything missing — never guess (CLAUDE.md design rules). */
+export const NF = "Not found";
+export const orNF = (v: string | number | null | undefined) => (v === null || v === undefined || v === "" ? NF : String(v));
+
+const TYPE_LABEL: Record<string, string> = { SFR: "House", MFR: "2–4 flat", LND: "Land", CND: "Condo", MOB: "Mobile home", COM: "Commercial" };
+export const typeLabel = (t: string | null) => (t ? TYPE_LABEL[t] ?? t : NF);
+
+export const yesNo = (v: boolean | null | undefined) => (v === null || v === undefined ? NF : v ? "Yes" : "No");

@@ -3,8 +3,15 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { pinColor } from "@/lib/scoring";
-import type { Property, Ring } from "@/lib/types";
+import type { Ring } from "@/lib/types";
+
+export interface Pin {
+  id: string;
+  lat: number;
+  lng: number;
+  label: string;
+  color: string;
+}
 
 const CENTER: L.LatLngExpression = [41.914, -87.6775]; // Bucktown / Wicker Park
 
@@ -14,13 +21,13 @@ interface Props {
   boundary: Ring | null;
   draft: Ring;
   drawing: boolean;
-  properties: Property[];
+  pins: Pin[];
   selectedId: string | null;
   onMapTap: (lng: number, lat: number) => void;
   onSelect: (id: string) => void;
 }
 
-export default function DealMap({ boundary, draft, drawing, properties, selectedId, onMapTap, onSelect }: Props) {
+export default function DealMap({ boundary, draft, drawing, pins, selectedId, onMapTap, onSelect }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const shapeLayer = useRef<L.LayerGroup | null>(null);
@@ -108,17 +115,17 @@ export default function DealMap({ boundary, draft, drawing, properties, selected
     const layer = pinLayer.current;
     if (!layer) return;
     layer.clearLayers();
-    for (const p of properties) {
+    for (const p of pins) {
       const selected = p.id === selectedId;
       const marker = L.circleMarker([p.lat, p.lng], {
         radius: selected ? 12 : 8,
         color: "#fff",
         weight: selected ? 4 : 2,
-        fillColor: pinColor(p.signals),
+        fillColor: p.color,
         fillOpacity: 1,
         interactive: !drawing,
       });
-      marker.bindTooltip(p.address, { direction: "top", offset: [0, -8] });
+      marker.bindTooltip(p.label, { direction: "top", offset: [0, -8] });
       marker.on("click", (e) => {
         L.DomEvent.stopPropagation(e);
         selectRef.current(p.id);
@@ -126,7 +133,7 @@ export default function DealMap({ boundary, draft, drawing, properties, selected
       marker.addTo(layer);
       if (selected) marker.bringToFront();
     }
-  }, [properties, selectedId, drawing]);
+  }, [pins, selectedId, drawing]);
 
   return <div ref={el} className="h-full w-full" aria-label="Map" />;
 }

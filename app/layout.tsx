@@ -36,8 +36,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/" className="rounded-lg px-3 py-2 text-blue hover:bg-blue-light">
                 Find deals
               </Link>
-              <Link href="/criteria" className="rounded-lg px-3 py-2 text-blue hover:bg-blue-light">
-                Buy box
+              <Link href="/settings" className="rounded-lg px-3 py-2 text-blue hover:bg-blue-light">
+                Settings
               </Link>
             </nav>
           </div>

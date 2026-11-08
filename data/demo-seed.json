@@ -1,0 +1,22 @@
+{
+  "reviews": [
+    {
+      "id": "seed_1",
+      "radarId": "demo_001",
+      "action": "teardown_confirmed",
+      "newScore": null,
+      "reason": "Frame house, sagging porch, original siding — confirmed on a drive-by.",
+      "reviewer": "Demo",
+      "createdAt": "2026-11-02T15:00:00.000Z"
+    },
+    {
+      "id": "seed_2",
+      "radarId": "demo_005",
+      "action": "teardown_confirmed",
+      "newScore": null,
+      "reason": "Boarded windows, roof damage visible from the street.",
+      "reviewer": "Demo",
+      "createdAt": "2026-11-02T15:05:00.000Z"
+    }
+  ]
+}
