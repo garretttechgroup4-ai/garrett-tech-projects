@@ -1,31 +1,22 @@
-# Phase 1 — Data: map, area search, property list
+# Phase 1 — Data (weeks 1–2)
 
-Goal: Prashanth can draw an area on a map, see how many properties are inside
-before anything is bought, confirm, and browse the results — on a phone.
+Paste into Claude Code from the project folder.
 
-## Build
-1. **Map** (Leaflet, light CARTO tiles, centered on Bucktown / Wicker Park).
-2. **Boundary drawing** — "Draw area" → tap points on the map → "Done".
-   Undo and Clear while drawing. Quick-pick chips for saved neighborhoods.
-3. **"Find properties"** → calls `/api/search/preview` → shows the count
-   ("23 properties in this area") and whether records will be used.
-   Second tap ("Show them") calls `/api/search/run`. Warn and cap at
-   `search.maxResultsPerSearch`.
-4. **Property list** — address, type, beds/baths, estimated value, signal
-   tags (plain-English labels from `config/scoring.json`). Sorted by most
-   signals. Tapping a row highlights its pin; tapping a pin scrolls the list.
-5. **Property page** `/property/[id]` — Street View photo (via
-   `/api/streetview`, placeholder without a key), facts, owner, every signal
-   with its description, small map, back button.
-6. **Data sources** — `lib/sources/demo.ts` (no key) and
-   `lib/sources/propertyradar.ts` (key present), picked automatically.
-   Visible "Demo mode" banner when on demo data.
-7. **Storage** — `lib/store.ts`; local JSON file in `data/local/` until
-   Supabase keys exist. Last search reloads when the app reopens.
-8. **API check** — keep `/api/propertyradar/explore` to inspect the raw
-   live response and fix `docs/field-map.md`.
+---
 
-## Done when
-- Demo mode: draw → preview → confirm → list → property works on desktop and
-  at 375px wide.
-- `npm run build` passes. No keys in the repo.
+Read CLAUDE.md, config/scoring.json, supabase/schema.sql, and docs/field-map.md before writing code.
+
+Build Phase 1 of the Deal Finder:
+
+1. Set up a Next.js (App Router, TypeScript) project with Supabase auth (email magic link). Light theme only.
+2. Apply supabase/schema.sql. Seed one admin profile for Antwan.
+3. Build `lib/propertyradar.ts`, a server-only typed client for `POST /v1/properties`:
+   - Accepts a Criteria array; always calls with `Purchase=0` first to get a count.
+   - Requests only the fields listed in docs/field-map.md. Reject any field in `excluded_fields`.
+   - Before you write the field list, open the PropertyRadar API Reference and resolve every item marked **confirm** in docs/field-map.md. Update the doc with the real names.
+   - Handles paging and rate limits; logs every call to `credit_log`.
+4. Map screen: draw a boundary polygon, name it, save it to `boundaries`.
+5. "Find properties" button: combines the boundary polygon with `prefilter.pr_criteria` from config, shows the preview count and credit cost, and purchases only after a confirm click. Skip any `radar_id` already purchased in the last 30 days. Save results to `properties` (keep the full response in `raw`).
+6. List screen: address, value, equity %, years owned, year built, estimated lot width. Sortable. Tapping a row opens a basic property page.
+
+Done when: I can draw a boundary in Bucktown, see the count and cost, confirm, and see real properties on the map and in the list, with credits logged. Give me a plain-English summary and anything you need me to decide.

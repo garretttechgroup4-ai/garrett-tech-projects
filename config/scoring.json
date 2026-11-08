@@ -1,134 +1,176 @@
 {
-  "version": 2,
-  "notes": "Signals the Deal Finder flags on every property. Labels and descriptions are shown to users as-is, so keep them plain English. Weights drive the 0–100 deal score. 'source' points at docs/field-map.md.",
-  "search": {
-    "maxResultsPerSearch": 250,
-    "previewBeforePurchase": true
+  "version": 1,
+  "updated": "2026-10-29",
+  "source": "Joe's prospecting criteria (Oct 29) + Super Agent meeting (Oct 28)",
+
+  "market": {
+    "state": "IL",
+    "county_fips": 17031,
+    "city": "Chicago",
+    "pilot_boundary": {
+      "status": "PLACEHOLDER - Antwan to supply street boundaries",
+      "pr_criteria": { "name": "Polygon", "value": { "type": "Polygon", "coordinates": [] } }
+    }
   },
-  "scoring": {
-    "notes": "Score = sum of signal weights, capped at 100. Properties at or above aiRationaleMinScore get an AI write-up when opened.",
-    "maxScore": 100,
-    "aiRationaleMinScore": 25,
-    "bands": [
-      {
-        "id": "hot",
-        "label": "Hot",
-        "min": 50
-      },
-      {
-        "id": "warm",
-        "label": "Warm",
-        "min": 25
-      },
-      {
-        "id": "cold",
-        "label": "Cold",
-        "min": 0
-      }
+
+  "prefilter": {
+    "description": "Sent to PropertyRadar as search Criteria. Cuts the boundary down before any credits are spent.",
+    "pr_criteria": [
+      { "name": "AVM", "value": [[700000, null]], "why": "Joe's floor: estimated value over $700K" },
+      { "name": "PropertyType", "value": [{ "name": "PType", "value": ["SFR", "MFR", "LND"] }], "why": "Houses, 2-4 flats, and land" }
     ]
   },
+
+  "project_rules": {
+    "min_project_size_usd": 1000000,
+    "note": "Land plus construction must reach $1M+. Shown as a pass/fail tag, not a score."
+  },
+
+  "points": { "top": 3, "high": 2, "medium": 1 },
+
   "signals": [
     {
-      "id": "pre_foreclosure",
-      "label": "Pre-foreclosure",
-      "description": "The lender has started foreclosure (notice of default or lis pendens is on record).",
-      "weight": 20,
-      "tone": "urgent",
-      "source": "inForeclosure / ForeclosureStage"
+      "id": "failed_listing",
+      "label": "Tried to sell before (expired or cancelled listing)",
+      "tier": "top",
+      "pr_criteria": { "name": "inDistress", "value": ["isExpiredListing"] },
+      "note": "Confirm whether cancelled listings are a separate listing-status field in the Criteria Reference."
     },
     {
-      "id": "tax_delinquent",
-      "label": "Behind on property taxes",
-      "description": "Property taxes are past due.",
-      "weight": 15,
-      "tone": "urgent",
-      "source": "inTaxDelinquency"
+      "id": "code_violations",
+      "label": "Code violations or enforcement",
+      "tier": "top",
+      "pr_criteria": { "name": "inDistress", "value": ["isCodeEnforcement"] }
     },
     {
-      "id": "probate",
-      "label": "Owner passed away / probate",
-      "description": "The owner is deceased or the property is in probate.",
-      "weight": 15,
-      "tone": "urgent",
-      "source": "isDeceasedProperty / inProbate"
+      "id": "owner_age_70_plus",
+      "label": "Owner 70+",
+      "tier": "top",
+      "enabled": false,
+      "requires_legal_review": true,
+      "pr_criteria": { "name": "Age", "value": [[70, null]] },
+      "note": "Off until attorney review (Illinois age protections). Long ownership covers most of the same sellers."
+    },
+    {
+      "id": "teardown_visual",
+      "label": "Looks like a teardown (AI + human check)",
+      "tier": "top",
+      "computed": "Phase 2: Claude reviews street/aerial imagery; a person confirms."
+    },
+    {
+      "id": "high_equity",
+      "label": "High equity",
+      "tier": "high",
+      "pr_criteria": { "name": "EquityPercent", "value": [[50, null]] },
+      "tunable": "50% is a starting point; Joe to confirm."
+    },
+    {
+      "id": "long_ownership",
+      "label": "Owned 15+ years (last recorded sale 15+ years ago)",
+      "tier": "high",
+      "computed": "From the last transfer/sale date field. Confirm exact field name in the Criteria Reference."
+    },
+    {
+      "id": "old_building",
+      "label": "Built 75+ years ago",
+      "tier": "high",
+      "pr_criteria": { "name": "PropertyAge", "value": [[75, null]] }
+    },
+    {
+      "id": "owns_multiple",
+      "label": "Owner has 2+ properties (has somewhere to go)",
+      "tier": "high",
+      "pr_criteria": { "name": "NumberPropertiesOwned", "value": [[2, null]] }
+    },
+    {
+      "id": "vacant",
+      "label": "Vacant (USPS)",
+      "tier": "high",
+      "pr_criteria": { "name": "isSiteVacant", "value": [1] }
+    },
+    {
+      "id": "nearby_high_sale",
+      "label": "Nearby high sale",
+      "tier": "high",
+      "computed": "Phase 2: comparable sold within 0.25 mi in last 24 months above $1.5M (tunable)."
+    },
+    {
+      "id": "open_mortgage",
+      "label": "1+ open mortgage",
+      "tier": "medium",
+      "pr_criteria": { "name": "NumberLoans", "value": [[1, null]] }
+    },
+    {
+      "id": "estate_or_death",
+      "label": "Death, probate, or estate",
+      "tier": "medium",
+      "pr_criteria": { "name": "inDistress", "value": ["isDeceasedProperty", "inProbateProperty", "isDeceasedJointTenant"] }
+    },
+    {
+      "id": "liens_or_litigation",
+      "label": "Liens or judgments",
+      "tier": "medium",
+      "pr_criteria_any": [
+        { "name": "PropertyHasOpenLiens", "value": [1] },
+        { "name": "PropertyHasOpenPersonLiens", "value": [1] }
+      ]
+    },
+    {
+      "id": "out_of_state_owner",
+      "label": "Out-of-state owner",
+      "tier": "medium",
+      "pr_criteria": { "name": "inDistress", "value": ["isOutOfStateOwner"] }
     },
     {
       "id": "divorce",
       "label": "Divorce filing",
-      "description": "The owners have a divorce on record.",
-      "weight": 12,
-      "tone": "urgent",
-      "source": "inDivorce"
+      "tier": "medium",
+      "pr_criteria": { "name": "inDivorce", "value": [1] },
+      "display": "Flag only. Never a search filter or a talking point."
     },
     {
-      "id": "bankruptcy",
-      "label": "Bankruptcy",
-      "description": "An owner has filed for bankruptcy.",
-      "weight": 12,
-      "tone": "urgent",
-      "source": "inBankruptcy"
-    },
-    {
-      "id": "liens",
-      "label": "Liens on the property",
-      "description": "There are recorded liens (for example a contractor, city, or tax lien).",
-      "weight": 8,
-      "tone": "warning",
-      "source": "hasLiens / LienCount"
-    },
-    {
-      "id": "vacant",
-      "label": "Looks vacant",
-      "description": "Mail is not being delivered — the property appears empty.",
-      "weight": 10,
-      "tone": "warning",
-      "source": "isVacant"
-    },
-    {
-      "id": "absentee_owner",
-      "label": "Owner doesn't live there",
-      "description": "The owner's mailing address is different from the property.",
-      "weight": 8,
-      "tone": "info",
-      "source": "isSameMailingOrExempt (inverted) / OwnerOccupied"
-    },
-    {
-      "id": "out_of_state_owner",
-      "label": "Owner lives out of state",
-      "description": "The owner's mailing address is outside Illinois.",
-      "weight": 6,
-      "tone": "info",
-      "source": "MailState != property State"
-    },
-    {
-      "id": "high_equity",
-      "label": "High equity (50%+)",
-      "description": "The owner owns at least half the home's value outright.",
-      "weight": 8,
-      "tone": "positive",
-      "threshold": {
-        "equityPercentMin": 50
-      },
-      "source": "EquityPercent"
-    },
-    {
-      "id": "free_and_clear",
-      "label": "Paid off — no mortgage",
-      "description": "No open loans on record.",
-      "weight": 6,
-      "tone": "positive",
-      "source": "isFreeAndClear / TotalLoanBalance = 0"
-    },
-    {
-      "id": "long_term_owner",
-      "label": "Owned 15+ years",
-      "description": "The same owner has held it for at least 15 years.",
-      "weight": 5,
-      "tone": "info",
-      "threshold": {
-        "yearsOwnedMin": 15
-      },
-      "source": "LastTransferRecDate"
+      "id": "likely_to_list",
+      "label": "PropertyRadar likely-to-list score 60+",
+      "tier": "medium",
+      "pr_criteria": { "name": "LikelyListingScore", "value": [[60, null]] }
     }
+  ],
+
+  "overrides": {
+    "eyes_on": "A team member's site-visit flag sends the property to the Call List regardless of score."
+  },
+
+  "thresholds": {
+    "call_list": 6,
+    "score_min": 1,
+    "score_max": 10,
+    "review_sample_rate": 0.1,
+    "daily_call_list_target": 4
+  },
+
+  "buy_boxes": {
+    "status": "PLACEHOLDER - one entry per developer (5-6). Antwan to supply.",
+    "lot_width_note": "PropertyRadar gives lot square feet, not frontage. Estimate width as LotSize / 125 (standard Chicago lot depth) and label it 'estimated'.",
+    "example": {
+      "developer": "Developer A",
+      "min_lot_width_ft": 30,
+      "property_types": ["SFR", "MFR", "LND"],
+      "max_land_price_usd": null,
+      "areas": ["Bucktown", "Wicker Park", "Lakeview"],
+      "avoid": ["corner lots", "landmark district"]
+    },
+    "developers": []
+  },
+
+  "contacts": {
+    "relatives_per_property": 4,
+    "rank_phones_by": ["mobile first", "active status", "not DNC", "not litigator", "owner before relative"],
+    "never_contact_if": ["DNC", "known litigator", "opted out", "wrong person"]
+  },
+
+  "excluded_fields": [
+    "Ethnicity", "Gender", "MaritalStatus", "PresenceOfChildren", "ChildAge",
+    "AdultChildrenAtHome", "Language", "Interests", "Giving", "Religion",
+    "Education", "Income", "Networth", "OccupationGroup", "BirthMonth"
   ]
 }
