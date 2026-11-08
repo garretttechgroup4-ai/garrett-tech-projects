@@ -8,3 +8,4 @@ out/
 # Local data store (demo/live search results) — never commit
 data/local/
 !.env.example
+*.tsbuildinfo
