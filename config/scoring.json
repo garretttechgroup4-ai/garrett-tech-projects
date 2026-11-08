@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "notes": "Signals the Deal Finder flags on every property. Labels and descriptions are shown to users as-is, so keep them plain English. Weights are used by Phase 2 scoring only. 'source' points at docs/field-map.md.",
+  "search": {
+    "maxResultsPerSearch": 250,
+    "previewBeforePurchase": true
+  },
+  "signals": [
+    {
+      "id": "pre_foreclosure",
+      "label": "Pre-foreclosure",
+      "description": "The lender has started foreclosure (notice of default or lis pendens is on record).",
+      "weight": 20,
+      "tone": "urgent",
+      "source": "inForeclosure / ForeclosureStage"
+    },
+    {
+      "id": "tax_delinquent",
+      "label": "Behind on property taxes",
+      "description": "Property taxes are past due.",
+      "weight": 15,
+      "tone": "urgent",
+      "source": "inTaxDelinquency"
+    },
+    {
+      "id": "probate",
+      "label": "Owner passed away / probate",
+      "description": "The owner is deceased or the property is in probate.",
+      "weight": 15,
+      "tone": "urgent",
+      "source": "isDeceasedProperty / inProbate"
+    },
+    {
+      "id": "divorce",
+      "label": "Divorce filing",
+      "description": "The owners have a divorce on record.",
+      "weight": 12,
+      "tone": "urgent",
+      "source": "inDivorce"
+    },
+    {
+      "id": "bankruptcy",
+      "label": "Bankruptcy",
+      "description": "An owner has filed for bankruptcy.",
+      "weight": 12,
+      "tone": "urgent",
+      "source": "inBankruptcy"
+    },
+    {
+      "id": "liens",
+      "label": "Liens on the property",
+      "description": "There are recorded liens (for example a contractor, city, or tax lien).",
+      "weight": 8,
+      "tone": "warning",
+      "source": "hasLiens / LienCount"
+    },
+    {
+      "id": "vacant",
+      "label": "Looks vacant",
+      "description": "Mail is not being delivered — the property appears empty.",
+      "weight": 10,
+      "tone": "warning",
+      "source": "isVacant"
+    },
+    {
+      "id": "absentee_owner",
+      "label": "Owner doesn't live there",
+      "description": "The owner's mailing address is different from the property.",
+      "weight": 8,
+      "tone": "info",
+      "source": "isSameMailingOrExempt (inverted) / OwnerOccupied"
+    },
+    {
+      "id": "out_of_state_owner",
+      "label": "Owner lives out of state",
+      "description": "The owner's mailing address is outside Illinois.",
+      "weight": 6,
+      "tone": "info",
+      "source": "MailState != property State"
+    },
+    {
+      "id": "high_equity",
+      "label": "High equity (50%+)",
+      "description": "The owner owns at least half the home's value outright.",
+      "weight": 8,
+      "tone": "positive",
+      "threshold": { "equityPercentMin": 50 },
+      "source": "EquityPercent"
+    },
+    {
+      "id": "free_and_clear",
+      "label": "Paid off — no mortgage",
+      "description": "No open loans on record.",
+      "weight": 6,
+      "tone": "positive",
+      "source": "isFreeAndClear / TotalLoanBalance = 0"
+    },
+    {
+      "id": "long_term_owner",
+      "label": "Owned 15+ years",
+      "description": "The same owner has held it for at least 15 years.",
+      "weight": 5,
+      "tone": "info",
+      "threshold": { "yearsOwnedMin": 15 },
+      "source": "LastTransferRecDate"
+    }
+  ]
+}
